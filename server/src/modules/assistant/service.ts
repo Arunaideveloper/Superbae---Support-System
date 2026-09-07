@@ -20,7 +20,7 @@ Never invent account details, prices or policies that are not in the context.`;
 
 /** Ara has a server-side brain if either the AI sidecar or a Gemini key is set. */
 export function llmConfigured(): boolean {
-  return !!env.AI_SERVICE_URL || !!env.GEMINI_API_KEY;
+  return !!env.AI_SERVICE_URL || !!env.GEMINI_API_KEY || !!env.OPENAI_API_KEY;
 }
 
 /**
@@ -91,18 +91,60 @@ export async function callGemini(question: string, context: string): Promise<str
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      console.error(`[Ara] Gemini ${model} failed: HTTP ${resp.status} ${body.slice(0, 400)}`);
+      return null;
+    }
     const data: any = await resp.json();
     const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") || "";
+    if (!text.trim()) console.error("[Ara] Gemini returned an empty answer:", JSON.stringify(data).slice(0, 400));
     return text.trim() || null;
-  } catch {
+  } catch (err) {
+    console.error("[Ara] Gemini request error:", err);
+    return null;
+  }
+}
+
+/** Call the OpenAI Chat Completions API directly. Returns the answer text, or null on any failure. */
+export async function callOpenAI(question: string, context: string): Promise<string | null> {
+  if (!env.OPENAI_API_KEY) return null;
+  const model = env.OPENAI_MODEL || "gpt-4o-mini";
+  try {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.3,
+        max_tokens: 512,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: `CONTEXT:\n${context}\n\nQUESTION: ${question}` },
+        ],
+      }),
+    });
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      console.error(`[Ara] OpenAI ${model} failed: HTTP ${resp.status} ${body.slice(0, 400)}`);
+      return null;
+    }
+    const data: any = await resp.json();
+    const text = (data?.choices?.[0]?.message?.content || "").trim();
+    if (!text) console.error("[Ara] OpenAI returned an empty answer:", JSON.stringify(data).slice(0, 400));
+    return text || null;
+  } catch (err) {
+    console.error("[Ara] OpenAI request error:", err);
     return null;
   }
 }
 
 /**
- * Produce a server-side answer. Prefers the AI sidecar; on failure falls back to
- * the legacy direct-Gemini path; returns null if neither yields an answer.
+ * Produce a server-side answer. Order: AI sidecar -> direct Gemini -> direct OpenAI.
+ * Grounding context is built once and shared by the direct providers.
  */
 export async function llmAnswer(
   question: string,
@@ -111,9 +153,16 @@ export async function llmAnswer(
   const viaSidecar = await callAIService(question, history);
   if (viaSidecar) return viaSidecar;
 
-  if (env.GEMINI_API_KEY) {
+  if (env.GEMINI_API_KEY || env.OPENAI_API_KEY) {
     const context = await buildContext(question);
-    return callGemini(question, context);
+    if (env.GEMINI_API_KEY) {
+      const viaGemini = await callGemini(question, context);
+      if (viaGemini) return viaGemini;
+    }
+    if (env.OPENAI_API_KEY) {
+      const viaOpenAI = await callOpenAI(question, context);
+      if (viaOpenAI) return viaOpenAI;
+    }
   }
   return null;
 }

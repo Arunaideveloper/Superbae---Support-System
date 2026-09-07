@@ -13,6 +13,9 @@ export const env = {
   // Legacy direct-Gemini path (fallback when the AI sidecar is not configured).
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
   ASSISTANT_LLM_MODEL: process.env.ASSISTANT_LLM_MODEL || "gemini-1.5-flash",
+  // OpenAI is the direct-path fallback when Gemini is unset or fails.
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
+  OPENAI_MODEL: process.env.OPENAI_MODEL || "gpt-4o-mini",
   // Superbae AI layer (FastAPI RAG sidecar). When set, Ara answers via its /chat.
   AI_SERVICE_URL: process.env.AI_SERVICE_URL || "",
   AI_ADMIN_API_KEY: process.env.AI_ADMIN_API_KEY || "",
