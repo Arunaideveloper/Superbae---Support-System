@@ -1,0 +1,10 @@
+# DEPRECATED — legacy stack (backend/). Superseded by superbae-ci.yml (server/web).
+# Kept for reference only; runs solely on manual dispatch, never on push.
+name: Backend CI (DEPRECATED)
+on: [workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Deprecated. Canonical CI is superbae-ci.yml."

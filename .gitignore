@@ -1,0 +1,46 @@
+# ---- secrets / environment ----
+.env
+.env.*
+!.env.example
+
+# ---- node ----
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ---- build output ----
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# ---- RAG generated artifacts (rebuilt by ingest.py / build_index.py) ----
+ai-layer/backend/knowledge.index
+ai-layer/backend/knowledge.txt
+ai-layer/backend/knowledge_metadata.pkl
+ai-layer/backend/chunks.txt
+
+# ---- archives / scratch / deprecated bundles ----
+_archive/
+_archive_tgz/
+_to_delete/
+*.tgz
+*.bak
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# ---- RAG source documents (large binaries — keep in Git LFS or object storage) ----
+ai-layer/backend/knowledge_sources/*.pdf

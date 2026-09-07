@@ -1,0 +1,61 @@
+# Canonical stack: frontend (Next.js/React) + server (Express API) + ai (FastAPI RAG) + mongo.
+# The web frontend lives in ./frontend (Next.js App Router + Tailwind + shadcn/ui) and
+# reaches the API through Next's /api rewrite. The legacy backend/ folder remains for
+# reference (see its DEPRECATED.md). Prior frontend sources are archived in _archive_tgz/.
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infrastructure/docker/frontend.Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Next rewrites /api/* to the API container (service name on the compose network).
+      API_PROXY: http://server:8001
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ./server
+      dockerfile: ../infrastructure/docker/server.Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      NODE_ENV: development
+      PORT: "8001"
+      MONGODB_URI: mongodb://mongo:27017/superbae
+      CORS_ORIGIN: http://localhost:3000
+      JWT_ACCESS_SECRET: dev-access-secret
+      JWT_REFRESH_SECRET: dev-refresh-secret
+      SEED_DEMO: "true"
+      AI_SERVICE_URL: http://ai:8000
+      AI_ADMIN_API_KEY: dev-admin-key
+    depends_on:
+      - mongo
+      - ai
+
+  ai:
+    build:
+      context: ./ai-layer
+      dockerfile: ../infrastructure/docker/ai.Dockerfile
+    environment:
+      GEMINI_API_KEY: ""
+      GEMINI_MODEL: gemini-1.5-flash
+      AI_ADMIN_API_KEY: dev-admin-key
+      AI_MONGODB_URI: mongodb://mongo:27017/superbae
+      AI_MONGODB_DB: superbae
+    expose:
+      - "8000"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:8
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
