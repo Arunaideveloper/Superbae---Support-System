@@ -57,7 +57,7 @@ PROVIDER_DEFINITIONS: dict[str, ProviderDefinition] = {
         "openai", "OpenAI", "OPENAI_API_KEY", "gpt-4o-mini", "OPENAI_MODEL", ("text_generation",)
     ),
     "gemini": ProviderDefinition(
-        "gemini", "Google Gemini", "GEMINI_API_KEY", "gemini-3.1-flash-lite", "GEMINI_MODEL", ("text_generation",)
+        "gemini", "Google Gemini", "GEMINI_API_KEY", "gemini-1.5-flash", "GEMINI_MODEL", ("text_generation",)
     ),
     "openrouter": ProviderDefinition(
         "openrouter", "OpenRouter", "OPENROUTER_API_KEY", "openrouter/free", "OPENROUTER_MODEL", ("text_generation",)
@@ -320,9 +320,12 @@ class AIServiceAdmin:
         }
 
     def _default_models(self) -> dict[tuple[str, str], ModelState]:
+        # Register the model actually resolved from env (<PROVIDER>_MODEL), so routing —
+        # which resolves the same way — always finds a matching, enabled model.
         return {
-            (provider_id, definition.default_model): ModelState(provider_id, definition.default_model, True)
+            (provider_id, model): ModelState(provider_id, model, True)
             for provider_id, definition in PROVIDER_DEFINITIONS.items()
+            for model in (os.getenv(definition.model_env, definition.default_model),)
         }
 
     def _default_services(self) -> dict[str, ServiceState]:

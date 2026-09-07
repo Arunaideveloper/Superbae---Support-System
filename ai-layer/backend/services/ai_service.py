@@ -104,7 +104,7 @@ class GeminiProvider:
     def __init__(self, model: str | None = None) -> None:
         api_key = _load_api_key("GEMINI_API_KEY")
         self._client = genai.Client(api_key=api_key)
-        self._model = model or os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+        self._model = model or os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
         self.last_usage: ProviderTokenUsage | None = None
     async def generate_response(self, messages: Sequence[ChatMessage]) -> str:
         self.last_usage = None
