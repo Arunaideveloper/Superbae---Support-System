@@ -176,37 +176,6 @@ class OpenAIProvider:
         return _extract_chat_response(data, "OpenAI")
 
 
-class OpenRouterProvider:
-    endpoint = "https://openrouter.ai/api/v1/chat/completions"
-
-    def __init__(self, model: str | None = None) -> None:
-        self._api_key = _load_api_key("OPENROUTER_API_KEY")
-        self._model = model or os.getenv("OPENROUTER_MODEL", "openrouter/free")
-        self.last_usage: ProviderTokenUsage | None = None
-
-    async def generate_response(self, messages: Sequence[ChatMessage]) -> str:
-        self.last_usage = None
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": self._model,
-            "messages": _openai_messages(messages),
-        }
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(self.endpoint, headers=headers, json=payload)
-                response.raise_for_status()
-                data = response.json()
-        except (httpx.TimeoutException, httpx.NetworkError) as error:
-            raise AIProviderError("OpenRouter request failed") from error
-        except httpx.HTTPStatusError as error:
-            raise AIProviderError("OpenRouter rejected the request") from error
-        except (httpx.HTTPError, ValueError) as error:
-            raise AIProviderError("OpenRouter returned an invalid response") from error
-        self.last_usage = _extract_provider_usage(data)
-        return _extract_chat_response(data, "OpenRouter")
 
 
 def _extract_chat_response(data: object, provider_name: str) -> str:
@@ -290,7 +259,6 @@ class AIService:
         provider_factories = {
             "openai": OpenAIProvider,
             "gemini": GeminiProvider,
-            "openrouter": OpenRouterProvider,
         }
         try:
             routes = self._admin_service.routing("customer_support")

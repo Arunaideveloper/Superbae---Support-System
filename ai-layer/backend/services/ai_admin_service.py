@@ -59,9 +59,6 @@ PROVIDER_DEFINITIONS: dict[str, ProviderDefinition] = {
     "gemini": ProviderDefinition(
         "gemini", "Google Gemini", "GEMINI_API_KEY", "gemini-1.5-flash", "GEMINI_MODEL", ("text_generation",)
     ),
-    "openrouter": ProviderDefinition(
-        "openrouter", "OpenRouter", "OPENROUTER_API_KEY", "openrouter/free", "OPENROUTER_MODEL", ("text_generation",)
-    ),
 }
 
 MODEL_DEFINITIONS = {
@@ -315,7 +312,7 @@ class AIServiceAdmin:
 
     def _default_providers(self) -> dict[str, ProviderState]:
         return {
-            provider_id: ProviderState(provider_id, _env_bool(f"AI_{provider_id.upper()}_ENABLED", provider_id != "openrouter"))
+            provider_id: ProviderState(provider_id, _env_bool(f"AI_{provider_id.upper()}_ENABLED", True))
             for provider_id in PROVIDER_DEFINITIONS
         }
 
