@@ -73,8 +73,15 @@ app.add_middleware(
 
 
 @app.get("/")
-def health_check() -> dict[str, str]:
-    return {"status": "ok", "service": "superbae-ai"}
+def health_check() -> dict[str, object]:
+    return {
+        "status": "ok",
+        "service": "superbae-ai",
+        "knowledge_base": {
+            "loaded": ai_service.knowledge_ready,
+            "chunks": ai_service.knowledge_chunks,
+        },
+    }
 
 
 def require_ai_admin(

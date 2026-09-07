@@ -259,6 +259,10 @@ class AIService:
         except Exception:
             self._retriever = None
             logger.warning("Knowledge retriever unavailable", exc_info=True)
+        self.knowledge_ready = self._retriever is not None
+        self.knowledge_chunks = len(getattr(self._retriever, "chunks", []) or [])
+        if not self.knowledge_ready:
+            logger.warning("Ara is running WITHOUT knowledge-base grounding")
 
     def _grounded_context(self, message: str) -> ChatMessage | None:
         if self._retriever is None:

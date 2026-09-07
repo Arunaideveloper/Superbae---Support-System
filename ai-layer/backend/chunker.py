@@ -1,7 +1,8 @@
 from pathlib import Path
 
-INPUT_FILE = Path("knowledge.txt")
-OUTPUT_FILE = Path("chunks.txt")
+BASE_DIR = Path(__file__).resolve().parent
+INPUT_FILE = BASE_DIR / "knowledge.txt"
+OUTPUT_FILE = BASE_DIR / "chunks.txt"
 
 CHUNK_SIZE = 1200
 CHUNK_OVERLAP = 200

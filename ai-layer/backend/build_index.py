@@ -5,9 +5,10 @@ import faiss
 from sentence_transformers import SentenceTransformer
 
 
-CHUNKS_FILE = Path("chunks.txt")
-INDEX_FILE = Path("knowledge.index")
-METADATA_FILE = Path("knowledge_metadata.pkl")
+BASE_DIR = Path(__file__).resolve().parent
+CHUNKS_FILE = BASE_DIR / "chunks.txt"
+INDEX_FILE = BASE_DIR / "knowledge.index"
+METADATA_FILE = BASE_DIR / "knowledge_metadata.pkl"
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 
