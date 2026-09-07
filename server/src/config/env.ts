@@ -16,6 +16,8 @@ export const env = {
   // Superbae AI layer (FastAPI RAG sidecar). When set, Ara answers via its /chat.
   AI_SERVICE_URL: process.env.AI_SERVICE_URL || "",
   AI_ADMIN_API_KEY: process.env.AI_ADMIN_API_KEY || "",
+  // Shared secret so only Express can call the AI layer's /chat. Empty = open (dev only).
+  AI_SERVICE_TOKEN: process.env.AI_SERVICE_TOKEN || "",
   // Seed demo accounts? Defaults on for dev; set SEED_DEMO=false in production.
   SEED_DEMO: (process.env.SEED_DEMO || "true").toLowerCase() !== "false",
 };

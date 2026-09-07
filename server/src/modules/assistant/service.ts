@@ -38,7 +38,10 @@ export async function callAIService(
   try {
     const resp = await fetch(`${env.AI_SERVICE_URL.replace(/\/$/, "")}/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(env.AI_SERVICE_TOKEN ? { "X-Service-Token": env.AI_SERVICE_TOKEN } : {}),
+      },
       body: JSON.stringify({ message: question, history }),
       signal: controller.signal,
     });

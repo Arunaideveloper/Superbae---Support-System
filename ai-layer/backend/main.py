@@ -85,6 +85,18 @@ def require_ai_admin(
         raise HTTPException(status_code=401, detail="AI administration authorization required")
 
 
+def require_service_token(
+    service_token: Annotated[str | None, Header(alias="X-Service-Token")] = None,
+) -> None:
+    """Gate /chat so only the Express API (which holds the shared token) can call it.
+    Open when AI_SERVICE_TOKEN is unset, to keep local dev frictionless."""
+    configured = os.getenv("AI_SERVICE_TOKEN")
+    if not configured:
+        return
+    if not service_token or not hmac.compare_digest(service_token, configured):
+        raise HTTPException(status_code=401, detail="Service authentication required")
+
+
 @app.get("/ai/providers", response_model=list[ProviderResponse], dependencies=[Depends(require_ai_admin)])
 def list_ai_providers() -> list[ProviderResponse]:
     return ai_admin_service.list_providers()
@@ -551,7 +563,7 @@ def delete_recommendation_feature(feature_id: str = Path(min_length=1, max_lengt
         raise HTTPException(status_code=404, detail=str(error)) from error
 
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat", response_model=ChatResponse, dependencies=[Depends(require_service_token)])
 async def chat(request: ChatRequest) -> ChatResponse:
     try:
         history = [
