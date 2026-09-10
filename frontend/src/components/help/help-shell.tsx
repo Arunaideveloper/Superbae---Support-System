@@ -6,6 +6,7 @@ import { HelpSidebar } from "@/components/help/help-sidebar";
 import { HelpFooter } from "@/components/help/help-footer";
 import { SearchBox } from "@/components/help/search-box";
 import { Button } from "@/components/ui/button";
+import { AraWidget } from "@/components/ara/ara-widget";
 
 /** Professional two-column Help Center shell: fixed left sidebar + top bar. */
 export function HelpShell({ children }: { children: React.ReactNode }) {
@@ -62,6 +63,7 @@ export function HelpShell({ children }: { children: React.ReactNode }) {
         </main>
         <HelpFooter />
       </div>
+      <AraWidget />
     </div>
   );
 }

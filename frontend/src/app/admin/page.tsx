@@ -15,6 +15,9 @@ import { Sla } from "@/components/admin/sla";
 import { Users } from "@/components/admin/users";
 import { Agents } from "@/components/admin/agents";
 import { KnowledgeBase } from "@/components/admin/knowledge-base";
+import { Analytics } from "@/components/admin/analytics";
+import { Fraud } from "@/components/admin/fraud";
+import { AraWidget } from "@/components/ara/ara-widget";
 
 const GROUPS: NavGroup[] = [
   { title: "OPERATIONS", items: [
@@ -30,6 +33,7 @@ const GROUPS: NavGroup[] = [
   ]},
   { title: "KNOWLEDGE", items: [{ key: "kb", label: "Knowledge Base", icon: "📚" }] },
   { title: "INSIGHTS", items: [{ key: "analytics", label: "Analytics", icon: "📈" }, { key: "reports", label: "Reports", icon: "📄" }] },
+  { title: "TRUST & SAFETY", items: [{ key: "fraud", label: "Fraud Detection", icon: "🛡️" }] },
   { title: "AUTOMATION", items: [{ key: "automations", label: "Automations", icon: "🤖" }, { key: "notifications", label: "Notifications", icon: "🔔" }] },
   { title: "ADMINISTRATION", items: [
     { key: "roles", label: "Roles & Permissions", icon: "🔐" },
@@ -50,6 +54,8 @@ const SUBTITLES: Record<string, string> = {
   agents: "Your support team, their workload and performance.",
   teams: "Groups of agents that own areas of support.",
   kb: "Write and publish the articles customers read at /help.",
+  analytics: "AI usage — requests, tokens, cost and success rate for Ara.",
+  fraud: "Review AI fraud-risk assessments and run activity checks.",
 };
 
 export default function AdminPage() {
@@ -110,6 +116,8 @@ export default function AdminPage() {
         : section === "agents" ? <Agents query={query} />
         : section === "teams" ? <Teams query={query} />
         : section === "kb" ? <KnowledgeBase query={query} onUnauthorized={logout} />
+        : section === "analytics" ? <Analytics />
+        : section === "fraud" ? <Fraud />
         : (
           <div className="min-h-0 flex-1 overflow-y-auto">
             <main className="mx-auto w-full max-w-[980px] px-4 pb-16 pt-7 sm:px-8">
@@ -126,6 +134,7 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+      <AraWidget />
     </div>
   );
 }

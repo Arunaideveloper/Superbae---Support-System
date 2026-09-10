@@ -11,7 +11,9 @@ import usersRouter from "./modules/users/router.js";
 import ticketsRouter from "./modules/tickets/router.js";
 import teamsRouter from "./modules/teams/router.js";
 import { kbAdminRouter, kbPublicRouter } from "./modules/kb/router.js";
+import publicTicketsRouter from "./modules/tickets/publicRouter.js";
 import assistantRouter from "./modules/assistant/router.js";
+import aiRouter from "./modules/ai/router.js";
 
 export function createApp() {
   const app = express();
@@ -38,9 +40,11 @@ export function createApp() {
   app.use("/api/teams", teamsRouter);
   app.use("/api/kb", kbAdminRouter);
   app.use("/api/assistant", assistantRouter);
+  app.use("/api/ai", aiRouter);
 
   // Public (no auth)
   app.use("/api/public/kb", kbPublicRouter);
+  app.use("/api/public/tickets", publicTicketsRouter);
 
   app.use(notFound);
   app.use(errorHandler);

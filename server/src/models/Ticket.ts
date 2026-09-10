@@ -4,6 +4,7 @@ import { TicketStatus, Priority, Source } from "../constants.js";
 const ticketSchema = new Schema(
   {
     subject: { type: String, required: true },
+    reference: { type: String, default: "", index: true },
     description: { type: String, default: "" },
     status: { type: String, enum: TicketStatus, default: "open", index: true },
     priority: { type: String, enum: Priority, default: "medium", index: true },

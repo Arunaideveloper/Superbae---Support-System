@@ -23,6 +23,15 @@ export const env = {
   AI_SERVICE_TOKEN: process.env.AI_SERVICE_TOKEN || "",
   // Seed demo accounts? Defaults on for dev; set SEED_DEMO=false in production.
   SEED_DEMO: (process.env.SEED_DEMO || "true").toLowerCase() !== "false",
+  // --- Email (optional). When SMTP_HOST + SMTP_USER are set, tickets are emailed. ---
+  SMTP_HOST: process.env.SMTP_HOST || "",
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
+  SMTP_SECURE: (process.env.SMTP_SECURE || "false").toLowerCase() === "true",
+  SMTP_USER: process.env.SMTP_USER || "",
+  SMTP_PASS: process.env.SMTP_PASS || "",
+  EMAIL_FROM: process.env.EMAIL_FROM || "",
+  // Public base URL used in emails (link back to the app).
+  APP_URL: process.env.APP_URL || "http://localhost:3000",
 };
 
 /**

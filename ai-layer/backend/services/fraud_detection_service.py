@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import uuid
 from dataclasses import dataclass, field
@@ -9,6 +10,8 @@ from typing import Any, Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from services.ai_admin_service import AuditEvent, AuditSink, InMemoryAuditSink
+
+logger = logging.getLogger(__name__)
 
 RiskLevel = Literal["low", "medium", "high"]
 InvestigationStatus = Literal["flagged", "under_review", "confirmed", "dismissed"]
@@ -764,8 +767,8 @@ class RiskScorer:
         low_threshold: float = 30.0,
         high_threshold: float = 60.0,
     ) -> None:
-        self.low_threshold = low_threshold
-        self.high_threshold = high_threshold
+        self.low_threshold = float(os.getenv("FRAUD_LOW_THRESHOLD", low_threshold))
+        self.high_threshold = float(os.getenv("FRAUD_HIGH_THRESHOLD", high_threshold))
 
     def score(
         self,
@@ -1086,5 +1089,25 @@ class FraudDetectionService:
         return updated
 
 
+def _build_fraud_detection_service() -> FraudDetectionService:
+    """Use durable Mongo persistence + audit trail when AI_MONGODB_URI is set; else
+    in-memory. Any failure falls back to in-memory so the AI layer always starts."""
+    if not os.getenv("AI_MONGODB_URI"):
+        return FraudDetectionService()
+    try:
+        from mongo_store import get_database, MongoFraudRepository, MongoAuditSink
+
+        db = get_database()
+        if db is None:
+            return FraudDetectionService()
+        return FraudDetectionService(
+            repository=MongoFraudRepository(db),
+            audit_sink=MongoAuditSink(db),
+        )
+    except Exception:
+        logger.warning("Fraud detection: Mongo persistence unavailable, using in-memory", exc_info=True)
+        return FraudDetectionService()
+
+
 # Default singleton instance for application runtime
-fraud_detection_service = FraudDetectionService()
+fraud_detection_service = _build_fraud_detection_service()

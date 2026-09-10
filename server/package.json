@@ -12,7 +12,8 @@
     "test:logic": "tsx src/seed/logic.test.ts",
     "test:schema": "tsx src/seed/schema.test.ts",
     "test": "npm run test:logic && npm run test:schema",
-    "smoke": "tsx src/seed/smoke.ts"
+    "smoke": "tsx src/seed/smoke.ts",
+    "mail:test": "tsx src/scripts/mailtest.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,6 +24,7 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
+    "nodemailer": "^6.9.16",
     "zod": "^3.24.1"
   },
   "devDependencies": {

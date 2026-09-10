@@ -38,6 +38,13 @@ export const updateUserSchema = z.object({
 }).refine((v) => Object.keys(v).length > 0, { message: "no fields to update" });
 
 /* ------------------------------ Tickets ----------------------------- */
+export const publicTicketSchema = z.object({
+  name: z.string().trim().max(120).optional(),
+  email: z.string().trim().email("a valid email is required"),
+  subject: nonEmpty("subject").max(200),
+  description: z.string().trim().max(5000).optional(),
+});
+
 export const createTicketSchema = z.object({
   subject: nonEmpty("subject").max(300),
   description: z.string().max(20000).optional(),

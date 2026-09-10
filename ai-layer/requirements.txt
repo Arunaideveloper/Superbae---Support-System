@@ -7,6 +7,7 @@ google-genai
 faiss-cpu
 sentence-transformers
 pypdf
+pymupdf
 python-docx
 numpy
 pymongo

@@ -7,7 +7,7 @@ never polluted by garbled text. Pipeline: python ingest.py -> chunker.py -> buil
 from pathlib import Path
 
 from docx import Document
-from pypdf import PdfReader
+import pymupdf  # PyMuPDF: reliable text extraction for Figma/mockup PDF exports
 
 BASE_DIR = Path(__file__).resolve().parent
 SOURCE_DIRS = [
@@ -24,7 +24,8 @@ MAX_SINGLE_LETTER_RATIO = 0.15
 
 def _extract(path: Path) -> str:
     if path.suffix.lower() == ".pdf":
-        return "\n".join(page.extract_text() or "" for page in PdfReader(path).pages).strip()
+        with pymupdf.open(path) as pdf:
+            return "\n".join(page.get_text("text") for page in pdf).strip()
     doc = Document(path)
     return "\n".join(p.text.strip() for p in doc.paragraphs if p.text.strip())
 

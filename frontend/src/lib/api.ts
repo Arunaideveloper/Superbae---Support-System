@@ -3,6 +3,8 @@ import type {
   TicketListRow, TicketDetail, TicketMessage, TicketEvent, TicketStats, AdminUser,
   TeamStatsResponse, EscalationsResponse, SlaReportResponse,
   KbCategory, KbArticle,
+  UsageSummary, UsageBreakdown,
+  FraudAssessment, FraudListResponse,
 } from "@/lib/types";
 
 const BASE = "/api";
@@ -266,4 +268,59 @@ export async function kbUpdateCategory(id: string, payload: Record<string, unkno
 export async function kbDeleteCategory(id: string): Promise<void> {
   const res = await request(`/kb/categories/${encodeURIComponent(id)}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) throw new Error(await kbErr(res, "Could not delete the category."));
+}
+
+/* ---- AI usage analytics (staff only) ---- */
+export async function fetchAiUsageSummary(): Promise<UsageSummary> {
+  const res = await request("/ai/usage/summary");
+  if (!res.ok) throw new Error("Could not load AI usage summary.");
+  return res.json();
+}
+export async function fetchAiUsageBreakdown(dim: "provider" | "model" | "feature"): Promise<UsageBreakdown[]> {
+  const res = await request(`/ai/usage/by-${dim}`);
+  if (!res.ok) throw new Error("Could not load AI usage breakdown.");
+  return res.json();
+}
+
+/* ---- AI fraud detection (staff only) ---- */
+export async function listFraudAssessments(params: { status?: string } = {}): Promise<FraudListResponse> {
+  const res = await request(`/ai/fraud/assessments${qs(params)}`);
+  if (!res.ok) throw new Error("Could not load fraud assessments.");
+  return res.json();
+}
+export async function analyzeFraud(activity: Record<string, unknown>): Promise<FraudAssessment> {
+  const res = await request("/ai/fraud/analyze", { method: "POST", body: JSON.stringify(activity) });
+  if (!res.ok) {
+    let msg = "Fraud analysis failed.";
+    try { const j = await res.json(); if (j?.detail) msg = j.detail; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+export async function updateFraudAssessment(
+  id: string,
+  payload: { investigation_status: string; review_notes?: string }
+): Promise<FraudAssessment> {
+  const res = await request(`/ai/fraud/assessments/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(payload) });
+  if (!res.ok) throw new Error("Could not update the assessment.");
+  return res.json();
+}
+
+/* ---- public guest ticket (no auth) ---- */
+export interface PublicTicketResult {
+  id: string; reference: string; subject: string; status: string;
+  email: string; emailed: boolean; emailConfigured: boolean; createdAt: string;
+}
+export async function createPublicTicket(payload: { name?: string; email: string; subject: string; description?: string }): Promise<PublicTicketResult> {
+  const res = await fetch(`${BASE}/public/tickets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let msg = "Could not submit your request. Please try again.";
+    try { const j = await res.json(); if (j?.detail) msg = j.detail; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
 }

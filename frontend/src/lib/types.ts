@@ -77,3 +77,56 @@ export interface KbArticle {
   published_at: string | null; created_at: string | null; updated_at: string | null;
   helpful_percent?: number | null; feedback_count?: number;
 }
+
+/* ---- AI usage analytics ---- */
+export interface UsageSummary {
+  total_requests: number;
+  successful_requests: number;
+  failed_requests: number;
+  requests_with_token_usage: number;
+  known_total_tokens: number;
+  requests_with_estimated_cost: number;
+  estimated_cost: number | null;
+  currency: string;
+}
+export interface UsageBreakdown extends UsageSummary {
+  group: string;
+}
+
+/* ---- AI fraud detection ---- */
+export type FraudRiskLevel = "low" | "medium" | "high";
+export type FraudStatus = "flagged" | "under_review" | "confirmed" | "dismissed";
+export interface FraudSignal {
+  signal_name: string;
+  triggered: boolean;
+  signal_value: unknown;
+  risk_contribution: number;
+  explanation: string;
+  data_used: Record<string, unknown>;
+  evaluable: boolean;
+}
+export interface FraudAssessment {
+  id: string;
+  activity_id: string;
+  activity_type: string;
+  risk_score: number;
+  risk_level: FraudRiskLevel;
+  indicators: FraudSignal[];
+  explanation: string;
+  signals_available: Record<string, boolean>;
+  signals_used: string[];
+  signals_unavailable: string[];
+  analysis_method: string;
+  confidence: number;
+  analysis_date: string;
+  investigation_status: FraudStatus;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  review_notes: string | null;
+}
+export interface FraudListResponse {
+  assessments: FraudAssessment[];
+  total: number;
+  limit: number;
+  offset: number;
+}

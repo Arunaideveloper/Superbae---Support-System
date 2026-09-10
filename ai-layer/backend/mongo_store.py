@@ -200,6 +200,101 @@ class MongoAIUsageRepository:
         return events
 
 
+class MongoFraudRepository:
+    """Durable store for fraud assessments (AI-002). Same shape as the in-memory
+    repository, backed by the 'fraud_assessments' collection. Fraud dataclasses
+    are imported lazily to avoid a circular import at module load."""
+
+    def __init__(self, db) -> None:
+        self._col = db["fraud_assessments"]
+        # Best-effort indexes for the review console's filters/sort.
+        try:
+            self._col.create_index("activity_id")
+            self._col.create_index("investigation_status")
+            self._col.create_index([("analysis_date", -1)])
+        except Exception:
+            pass  # index creation is best-effort; never block on it
+
+    @staticmethod
+    def _to_doc(a) -> dict:
+        return {
+            "_id": a.id, "activity_id": a.activity_id, "activity_type": a.activity_type,
+            "risk_score": a.risk_score, "risk_level": a.risk_level,
+            "indicators": [
+                {
+                    "signal_name": s.signal_name, "triggered": s.triggered,
+                    "signal_value": s.signal_value, "risk_contribution": s.risk_contribution,
+                    "explanation": s.explanation, "data_used": s.data_used, "evaluable": s.evaluable,
+                }
+                for s in a.indicators
+            ],
+            "explanation": a.explanation, "signals_available": a.signals_available,
+            "signals_used": a.signals_used, "signals_unavailable": a.signals_unavailable,
+            "analysis_method": a.analysis_method, "confidence": a.confidence,
+            "analysis_date": a.analysis_date, "investigation_status": a.investigation_status,
+            "reviewed_at": a.reviewed_at, "reviewed_by": a.reviewed_by, "review_notes": a.review_notes,
+        }
+
+    @staticmethod
+    def _to_assessment(doc):
+        from services.fraud_detection_service import FraudAssessment, SignalAnalysis
+        return FraudAssessment(
+            id=doc["_id"], activity_id=doc["activity_id"], activity_type=doc["activity_type"],
+            risk_score=doc["risk_score"], risk_level=doc["risk_level"],
+            indicators=[
+                SignalAnalysis(
+                    signal_name=i["signal_name"], triggered=i["triggered"],
+                    signal_value=i.get("signal_value"), risk_contribution=i["risk_contribution"],
+                    explanation=i["explanation"], data_used=i.get("data_used", {}),
+                    evaluable=i.get("evaluable", True),
+                )
+                for i in doc.get("indicators", [])
+            ],
+            explanation=doc["explanation"], signals_available=doc.get("signals_available", {}),
+            signals_used=doc.get("signals_used", []), signals_unavailable=doc.get("signals_unavailable", []),
+            analysis_method=doc["analysis_method"], confidence=doc["confidence"],
+            analysis_date=doc["analysis_date"], investigation_status=doc["investigation_status"],
+            reviewed_at=doc.get("reviewed_at"), reviewed_by=doc.get("reviewed_by"),
+            review_notes=doc.get("review_notes"),
+        )
+
+    @staticmethod
+    def _query(activity_id, status) -> dict:
+        q: dict = {}
+        if activity_id:
+            q["activity_id"] = activity_id
+        if status:
+            q["investigation_status"] = status
+        return q
+
+    def create_assessment(self, assessment):
+        self._col.replace_one({"_id": assessment.id}, self._to_doc(assessment), upsert=True)
+        return assessment
+
+    def get_assessment(self, assessment_id: str):
+        doc = self._col.find_one({"_id": assessment_id})
+        if not doc:
+            raise ValueError(f"Fraud assessment '{assessment_id}' not found")
+        return self._to_assessment(doc)
+
+    def update_assessment(self, assessment):
+        result = self._col.replace_one({"_id": assessment.id}, self._to_doc(assessment))
+        if result.matched_count == 0:
+            raise ValueError(f"Fraud assessment '{assessment.id}' not found")
+        return assessment
+
+    def list_assessments(self, activity_id=None, status=None, limit=100, offset=0):
+        cursor = self._col.find(self._query(activity_id, status)).sort("analysis_date", -1).skip(offset).limit(limit)
+        return [self._to_assessment(d) for d in cursor]
+
+    def list_flagged_assessments(self, limit=100):
+        cursor = self._col.find({"investigation_status": "flagged"}).sort("analysis_date", -1).limit(limit)
+        return [self._to_assessment(d) for d in cursor]
+
+    def count_assessments(self, activity_id=None, status=None):
+        return self._col.count_documents(self._query(activity_id, status))
+
+
 def get_database(uri: str | None = None, db_name: str | None = None):
     uri = uri or os.getenv("AI_MONGODB_URI")
     if not uri:
